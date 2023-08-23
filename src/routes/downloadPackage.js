@@ -1,11 +1,17 @@
+const express = require("express");
 const database = require("../database");
+const util = require("../util");
 
+/**
+ * 
+ * @param {express.Application} app 
+ */
 module.exports.init = (app) => {
   app.get("/package/*/*/download", async (req, res) => {
     const parts = req.path.split("/");
     parts.shift();
   
-    const name = parts[1];
+    const name = parts[1].toLowerCase();
     const version = parts[2].toLowerCase();
 
     // Check if the package exists
@@ -23,17 +29,7 @@ module.exports.init = (app) => {
       res.set("Content-Disposition", 'attachment; filename="download.zip"');
       return res.status(200).send(data);
     } catch (err) {
-      if (typeof err == "string") {
-        return res.status(400).send({
-          message: err
-        });
-      }
-
-      console.log(err);
-
-      return res.status(500).send({
-        message: "Unknown server error"
-      });
+      util.handleError(res, err);
     }
   });
 }

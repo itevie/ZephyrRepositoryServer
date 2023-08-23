@@ -1,5 +1,6 @@
 const express = require("express");
 const database = require("../database");
+const util = require("../util");
 
 /**
  * 
@@ -7,7 +8,7 @@ const database = require("../database");
  */
 module.exports.init = (app) => {
   app.get("/package/*/details", async (req, res) => {
-    let packageName = req.originalUrl.split("/")[2];
+    let packageName = req.originalUrl.split("/")[2].toLowerCase();
 
     // Check if it exists
     if (await database.packageExists(packageName) == false) {
@@ -22,17 +23,7 @@ module.exports.init = (app) => {
 
       return res.status(200).send(package);
     } catch (err) {
-      if (typeof err == "string") {
-        return res.status(400).send({
-          message: err
-        });
-      }
-
-      console.log(err);
-
-      return res.status(500).send({
-        message: "Unknown server error"
-      });
+      util.handleError(res, err);
     }
   });
 }

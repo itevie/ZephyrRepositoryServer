@@ -1,3 +1,5 @@
+const bcrypt = require("bcrypt");
+
 // Setup PG client
 const pg = require("pg");
 const client = new pg.Client({
@@ -14,6 +16,63 @@ let isConnected = false;
 function debug(text) {
   console.log(text);
 }
+
+// STUFF TO DO WITH USERS
+
+/**
+ * Registers a user into the database
+ * @param {string} username The username
+ * @param {string} password The password
+ * @returns void
+ */
+async function registerUser(username, password) {
+  await checkConnected();
+
+  // Check if username already exists
+  if ((await client.query(
+    `SELECT * FROM users WHERE username = '${username}'`
+  )).rowCount != 0) {
+    throw `Username ${username} already exists`
+  }
+
+  // Hash password
+  const salt = await bcrypt.genSalt();
+  const hash = await bcrypt.hash(password, salt);
+
+  // Add user to database
+  await client.query(
+    `INSERT INTO users(username, password) VALUES('${username.toLowerCase()}', '${hash}')`
+  );
+
+  return;
+}
+
+async function loginUser(username, password) {
+  await checkConnected();
+
+  // Check if username exists
+  if ((await client.query(
+    `SELECT * FROM users WHERE username = '${username}'`
+  )).rowCount == 0) {
+    throw `Username ${username} does not exist`
+  }
+
+  // Fetch user
+  const userRes = await client.query(
+    `SELECT * FROM users WHERE username = '${username}'`
+  );
+  const user = userRes.rows[0];
+
+  // Match passwords
+  if (!(await bcrypt.compare(password, user.password))) {
+    throw `Incorrect password`;
+  }
+
+  // Success
+  return user.id;
+}
+
+// STUFF TO DO WITH PACKAGES
 
 /**
  * Retrieves a package from the database
@@ -192,6 +251,11 @@ async function checkConnected() {
 
 // Export
 module.exports = {
+  // Users
+  registerUser,
+  loginUser,
+
+  // Packages
   createPackage,
   uploadPackageVersion,
   packageExists,

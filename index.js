@@ -1,9 +1,9 @@
-const fs = require("fs");
 const express = require("express");
-const path = require("path");
+const bodyParser = require("body-parser");
 
 // Create app
 const app = express();
+app.use(bodyParser.json());
 
 // Listen
 app.listen(3000, () => {
